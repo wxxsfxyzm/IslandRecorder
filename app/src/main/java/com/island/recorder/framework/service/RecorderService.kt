@@ -707,8 +707,8 @@ class RecorderService : Service() {
         if (_recordingState.value is RecordingState.Idle && startJob?.isActive != true) return
         Timber.d("Stopping recording")
 
-        // Update state immediately for responsive UI
-        _recordingState.value = RecordingState.Idle
+        // Mark the service busy until cleanup finishes so quick tile starts are not dropped.
+        _recordingState.value = RecordingState.Stopping
         requestTileRefresh(this)
 
         cleanupJob = serviceScope.launch(Dispatchers.IO) {
@@ -780,6 +780,8 @@ class RecorderService : Service() {
                 }
 
                 withContext(Dispatchers.Main) {
+                    _recordingState.value = RecordingState.Idle
+                    requestTileRefresh(this@RecorderService)
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
                 }

@@ -44,7 +44,7 @@ android {
 
     defaultConfig {
         applicationId = "com.island.recorder"
-        
+
         // Version control retrieved from git, with a build-plugin fallback when git is unavailable.
         versionCode = project.getGitCommitCount()
         versionName = project.getBaseVersionName()
@@ -105,7 +105,6 @@ android {
     buildFeatures {
         buildConfig = true
         compose = true
-        aidl = true
     }
 
     packaging {
@@ -126,7 +125,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.splashscreen)
-    
+
     // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.compose.ui)
@@ -143,34 +142,34 @@ dependencies {
     implementation(libs.miuix.preference)
     implementation(libs.miuix.icons)
     implementation(libs.miuix.navigation)
-    
+
     // Koin Dependency Injection
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
     implementation(libs.koin.compose.viewmodel)
-    
+
     // Navigation3
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigationevent) {
         exclude(group = "androidx.navigation", module = "navigationevent-compose")
     }
-    
+
     // CameraX for Facecam
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
-    
+
     // ExoPlayer for Video Playback
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
-    
+
     // Accompanist for Permissions
     implementation(libs.accompanist.permissions)
-    
+
     // Coil for Image/Video Thumbnails
     implementation(libs.coil.compose)
     implementation(libs.coil.video)
@@ -196,7 +195,7 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
-    
+
     // Debug
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)

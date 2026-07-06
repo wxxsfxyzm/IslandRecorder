@@ -422,8 +422,11 @@ fun SettingsPage(
                                 icon = { modifier ->
                                     Icon(
                                         painter = painterResource(
-                                            if (style == TileStyle.APP_ICON) R.drawable.ic_launcher_foreground_preview
-                                            else R.drawable.ic_record
+                                            if (style == TileStyle.APP_ICON) {
+                                                R.drawable.ic_tile_style_app_icon
+                                            } else {
+                                                R.drawable.ic_record
+                                            }
                                         ),
                                         contentDescription = null,
                                         modifier = modifier

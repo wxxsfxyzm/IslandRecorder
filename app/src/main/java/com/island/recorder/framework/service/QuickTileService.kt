@@ -3,7 +3,6 @@ package com.island.recorder.framework.service
 import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.drawable.Icon
-import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import com.island.recorder.R
@@ -69,27 +68,24 @@ class QuickTileService : TileService() {
                 action = RecorderService.ACTION_STOP_RECORDING
             }
             startService(intent)
+        } else if (state is RecordingState.Stopping) {
+            Timber.d("Quick tile clicked while recording cleanup is in progress")
         } else {
             Timber.d("Quick tile clicked - launching shortcut for recording")
             val intent = Intent(this, RecordingShortcutActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                val pendingIntent = PendingIntent.getActivity(
-                    this, 0, intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                startActivityAndCollapse(pendingIntent)
-            } else {
-                @Suppress("DEPRECATION")
-                startActivityAndCollapse(intent)
-            }
+            val pendingIntent = PendingIntent.getActivity(
+                this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            startActivityAndCollapse(pendingIntent)
         }
     }
 
     private fun updateTile(snapshot: TileSnapshot) {
         val iconRes = if (snapshot.tileStyle == TileStyle.APP_ICON) {
-            R.drawable.ic_launcher_foreground_large
+            R.drawable.ic_tile_style_app_icon
         } else {
             R.drawable.ic_record
         }
@@ -104,7 +100,9 @@ class QuickTileService : TileService() {
     }
 
     private fun RecordingState.isRecordingTileState(): Boolean =
-        this is RecordingState.Recording || this is RecordingState.Paused
+        this is RecordingState.Recording ||
+            this is RecordingState.Paused ||
+            this is RecordingState.Stopping
 
     private data class TileSnapshot(
         val isRecording: Boolean,

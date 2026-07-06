@@ -20,6 +20,11 @@ sealed class RecordingState {
      * @param durationMs Duration recorded before pause
      */
     data class Paused(val durationMs: Long) : RecordingState()
+
+    /**
+     * Recording has stopped and resources are being released
+     */
+    data object Stopping : RecordingState()
     
     /**
      * Processing/encoding the recorded video
