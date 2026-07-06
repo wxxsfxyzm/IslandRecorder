@@ -108,8 +108,8 @@
 
     <!--    <overlay
             android:isStatic="true"
-            android:requiredSystemPropertyName="ro.miui.build.region"
-            android:requiredSystemPropertyValue="cn"
+            android:requiredSystemPropertyName="ro.product.manufacturer"
+            android:requiredSystemPropertyValue="Xiaomi"
             android:targetPackage="com.island.recorder" />-->
 
 </manifest>

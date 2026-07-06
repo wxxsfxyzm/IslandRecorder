@@ -25,6 +25,7 @@ enum class BooleanSetting {
 
 interface AppSettingsRepository {
     val preferencesFlow: Flow<AppPreferences>
+    val currentPreferences: AppPreferences
     val recordingSettingsFlow: Flow<RecordingSettings>
     val storageTreeUriFlow: Flow<String>
     val isFirstLaunchFlow: Flow<Boolean>

@@ -109,7 +109,7 @@ data class RecordingSettings(
     val videoBitrate: VideoBitrate = VideoBitrate.AUTO,
     val screenOrientation: ScreenOrientation = ScreenOrientation.AUTO,
     val frameRate: FrameRate = FrameRate.AUTO,
-    val audioSource: AudioSource = AudioSource.BOTH,
+    val audioSource: AudioSource = AudioSource.NONE,
     val videoCodec: VideoCodec = VideoCodec.H264,
     val showTouches: Boolean = false,
     val stopOnLockScreen: Boolean = false,

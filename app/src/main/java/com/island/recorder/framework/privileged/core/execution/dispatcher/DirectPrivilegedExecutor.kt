@@ -23,7 +23,7 @@ fun <T> useDirectPrivileged(
             val terminal = special?.invoke() ?: AppProcessTerminal.Root
             val handle = koin.get<ProcessHookRecycler> { parametersOf(terminal) }.make()
             handle.use {
-                action(DefaultPrivilegedService.binderWrapped(name = "Root") { binder ->
+                action(DefaultPrivilegedService.binderWrapped(name = terminal.runtimeName()) { binder ->
                     it.entity.binderWrapper(binder)
                 })
             }
@@ -39,11 +39,19 @@ fun <T> useDirectPrivileged(
 
 fun <T> runDirectPrivilegedOrNull(
     authorizer: Authorizer,
+    special: (() -> AppProcessTerminal?)? = null,
     action: (PrivilegedOperations) -> T
 ): T? =
     try {
-        useDirectPrivileged(authorizer = authorizer, action = action)
+        useDirectPrivileged(authorizer = authorizer, special = special, action = action)
     } catch (e: Exception) {
         Timber.tag(DIRECT_TAG).e(e, "Privileged action failed for $authorizer")
         null
+    }
+
+private fun AppProcessTerminal.runtimeName(): String =
+    when (this) {
+        AppProcessTerminal.Root -> "Root"
+        AppProcessTerminal.RootSystem -> "RootSystem"
+        is AppProcessTerminal.Customize -> "RootCustom"
     }

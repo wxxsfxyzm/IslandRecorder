@@ -2,7 +2,6 @@ package com.island.recorder.framework.privileged.provider
 
 import android.content.Context
 import com.island.recorder.domain.settings.repository.AppSettingsRepository
-import com.island.recorder.domain.settings.repository.StringSetting
 import com.island.recorder.framework.privileged.Authorizer
 import com.island.recorder.framework.privileged.DeviceCapability
 import com.island.recorder.framework.privileged.RootMode
@@ -15,7 +14,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 class PrivilegedOperationProvider(
     private val context: Context,
@@ -23,18 +21,10 @@ class PrivilegedOperationProvider(
     private val capabilityProvider: DeviceCapabilityProvider,
     private val appScope: CoroutineScope
 ) {
-    private val preferredAuthorizerFlow = MutableStateFlow(Authorizer.Shizuku)
-
     private val _projectMediaAllowedFlow = MutableStateFlow(false)
     val projectMediaAllowedFlow: StateFlow<Boolean> = _projectMediaAllowedFlow.asStateFlow()
 
     init {
-        appScope.launch(Dispatchers.IO) {
-            settingsRepository.getString(StringSetting.Authorizer, Authorizer.Shizuku.name)
-                .collect { value ->
-                    preferredAuthorizerFlow.value = safeAuthorizer(value)
-                }
-        }
         refreshProjectMediaAllowed()
     }
 
@@ -93,7 +83,7 @@ class PrivilegedOperationProvider(
 
     private fun activeAuthorizer(): Authorizer? {
         val capability = capabilityProvider.current()
-        val preferred = preferredAuthorizerFlow.value
+        val preferred = settingsRepository.currentPreferences.authorizer
 
         if (preferred == Authorizer.Shizuku && capability.shizukuMode == ShizukuMode.Authorized) {
             return Authorizer.Shizuku
@@ -111,13 +101,10 @@ class PrivilegedOperationProvider(
         return null
     }
 
-    private fun callPrivileged(block: (PrivilegedOperations) -> Boolean): Boolean {
+    private fun callPrivileged(
+        block: (PrivilegedOperations) -> Boolean
+    ): Boolean {
         val authorizer = activeAuthorizer() ?: return false
-        return runDirectPrivilegedOrNull(authorizer, block) ?: false
+        return runDirectPrivilegedOrNull(authorizer, action = block) ?: false
     }
-
-    private fun safeAuthorizer(value: String): Authorizer =
-        runCatching { Authorizer.valueOf(value) }
-            .onFailure { Timber.d(it, "Invalid authorizer value: %s", value) }
-            .getOrDefault(Authorizer.Shizuku)
 }

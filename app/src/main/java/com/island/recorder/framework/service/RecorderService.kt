@@ -1,7 +1,6 @@
 package com.island.recorder.framework.service
 
 import android.Manifest
-import android.app.KeyguardManager
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -16,7 +15,6 @@ import android.os.Build
 import android.os.IBinder
 import android.service.quicksettings.TileService
 import android.view.Display
-import androidx.annotation.RequiresApi
 import com.island.recorder.R
 import com.island.recorder.core.audio.AudioRecorder
 import com.island.recorder.core.codec.AudioEncoder
@@ -53,8 +51,6 @@ import org.koin.android.ext.android.inject
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 import java.util.Locale
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -88,8 +84,6 @@ class RecorderService : Service() {
     private var touchVisualizationEnabled = false
     private var screenShareProtectionDisabledForRecording = false
     private var stopOnLockScreen = false
-    private var keyguardLockedStateListener: KeyguardManager.KeyguardLockedStateListener? = null
-    private var keyguardExecutor: ExecutorService? = null
 
     private var lastHdrState = false
     private var videoFpsWindowStartUs = -1L
@@ -822,7 +816,6 @@ class RecorderService : Service() {
         val filter = IntentFilter(Intent.ACTION_SCREEN_OFF)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(lockScreenReceiver, filter, RECEIVER_NOT_EXPORTED)
-            registerKeyguardLockedStateListener()
         } else {
             registerReceiver(lockScreenReceiver, filter)
         }
@@ -834,45 +827,6 @@ class RecorderService : Service() {
         }.onFailure {
             Timber.w(it, "Failed to unregister lock screen receiver")
         }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            unregisterKeyguardLockedStateListener()
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun registerKeyguardLockedStateListener() {
-        val keyguardManager = getSystemService(KeyguardManager::class.java) ?: return
-        val executor = Executors.newSingleThreadExecutor()
-        val listener = KeyguardManager.KeyguardLockedStateListener { isKeyguardLocked ->
-            if (isKeyguardLocked) {
-                stopRecordingOnLockScreen("keyguard_locked")
-            }
-        }
-        runCatching {
-            keyguardManager.addKeyguardLockedStateListener(executor, listener)
-            keyguardExecutor = executor
-            keyguardLockedStateListener = listener
-        }.onFailure {
-            executor.shutdown()
-            Timber.w(it, "Keyguard locked state listener unavailable")
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun unregisterKeyguardLockedStateListener() {
-        val listener = keyguardLockedStateListener
-        if (listener != null) {
-            runCatching {
-                getSystemService(KeyguardManager::class.java)
-                    ?.removeKeyguardLockedStateListener(listener)
-            }.onFailure {
-                Timber.w(it, "Failed to unregister keyguard locked state listener")
-            }
-            keyguardLockedStateListener = null
-        }
-        keyguardExecutor?.shutdown()
-        keyguardExecutor = null
     }
 
     private fun stopRecordingOnLockScreen(reason: String) {

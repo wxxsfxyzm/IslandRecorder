@@ -43,10 +43,8 @@ class DefaultPrivilegedService private constructor(
         private const val CALL_METHOD_PUT_SYSTEM = "PUT_system"
         private const val CALL_METHOD_USER_KEY = "_user"
         private const val CALL_METHOD_OVERRIDEABLE_BY_RESTORE_KEY = "_overrideable_by_restore"
-
-        fun system() = DefaultPrivilegedService(PrivilegedRuntime.SystemApp)
-
-        fun userService() = DefaultPrivilegedService(PrivilegedRuntime.UserService)
+        private const val APP_OP_NONE = -1
+        private const val FLAG_RECEIVER_INCLUDE_BACKGROUND = 0x01000000
 
         fun shizukuHook() = DefaultPrivilegedService(PrivilegedRuntime.ShizukuHooked)
 
@@ -115,6 +113,14 @@ class DefaultPrivilegedService private constructor(
                 targetValue
             )
             broadcastScreenShareProtectionChanged(enabled)
+            val actualEnabled = isScreenShareProtectionEnabled()
+            if (actualEnabled != enabled) {
+                Timber.tag(TAG).w(
+                    "Screen share protection readback mismatch via ${runtime.name}: " +
+                        "expected=$enabled actual=$actualEnabled."
+                )
+                return false
+            }
             Timber.tag(TAG).i(
                 "Set screen share protection to $targetValue via ${runtime.name}."
             )
@@ -128,8 +134,24 @@ class DefaultPrivilegedService private constructor(
     private fun broadcastScreenShareProtectionChanged(enabled: Boolean) {
         val intent = Intent(ACTION_OPEN_SCREEN_SHARE_PROTECTION).apply {
             putExtra(EXTRA_OPEN_SCREEN_SHARE_PROTECTION, enabled)
+            addFlags(FLAG_RECEIVER_INCLUDE_BACKGROUND)
         }
-        context.sendBroadcast(intent, PERMISSION_READ_AND_WRITE_PERMISSION_MANAGER)
+        runtime.activityManager().broadcastIntent(
+            null,
+            intent,
+            null,
+            null,
+            0,
+            null,
+            null,
+            arrayOf(PERMISSION_READ_AND_WRITE_PERMISSION_MANAGER),
+            APP_OP_NONE,
+            null,
+            false,
+            false,
+            context.applicationInfo.uid / 100000
+        )
+        Timber.tag(TAG).d("Broadcasted screen share protection change via ${runtime.name}.")
     }
 
     private fun putSystemSettingWithHookedProvider(name: String, value: String) {
@@ -229,7 +251,12 @@ class DefaultPrivilegedService private constructor(
     override fun setProjectMediaAllowed(packageName: String, uid: Int, allowed: Boolean): Boolean {
         val service = appOpsService ?: return false
         return try {
-            service.setMode(projectMediaOpCode(), uid, packageName, if (allowed) MODE_ALLOWED else MODE_IGNORED)
+            service.setMode(
+                projectMediaOpCode(),
+                uid,
+                packageName,
+                if (allowed) MODE_ALLOWED else MODE_IGNORED
+            )
             true
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Failed to set PROJECT_MEDIA via ${runtime.name}")
