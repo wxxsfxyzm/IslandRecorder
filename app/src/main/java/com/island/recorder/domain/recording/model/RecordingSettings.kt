@@ -86,7 +86,11 @@ enum class AudioSource(@param:StringRes val labelResId: Int) {
 /**
  * Video codec options
  */
-enum class VideoCodec(val mimeType: String, @param:StringRes val labelResId: Int, val isHdrEnabled: Boolean = false) {
+enum class VideoCodec(
+    val mimeType: String,
+    @param:StringRes val labelResId: Int,
+    val isHdrEnabled: Boolean = false
+) {
     H264(android.media.MediaFormat.MIMETYPE_VIDEO_AVC, R.string.codec_h264),
     H265(android.media.MediaFormat.MIMETYPE_VIDEO_HEVC, R.string.codec_h265),
     H265_HDR(android.media.MediaFormat.MIMETYPE_VIDEO_HEVC, R.string.codec_h265_hdr, true)
@@ -96,8 +100,8 @@ enum class VideoCodec(val mimeType: String, @param:StringRes val labelResId: Int
  * Quick settings tile icon style
  */
 enum class TileStyle(@param:StringRes val labelResId: Int) {
-    DEFAULT(R.string.tile_style_default),
-    APP_ICON(R.string.tile_style_app_icon)
+    DEFAULT(R.string.tile_style_app_icon),
+    APP_ICON(R.string.tile_style_default)
 }
 
 /**
