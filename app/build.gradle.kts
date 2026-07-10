@@ -63,6 +63,7 @@ android {
 
         create("Stable") {
             dimension = "level"
+            versionNameSuffix = ".${project.getGitHash()}"
         }
     }
 
