@@ -9,7 +9,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -30,6 +29,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -221,13 +221,16 @@ class RecordingShortcutActivity : ComponentActivity() {
                         showDialog = false
                         finish()
                     },
-                    title = if (!isLandscape) stringResource(R.string.dialog_record_title) else null,
+                    title = null,
+                    insideMargin = DpSize.Zero,
                     maxWidth = dialogMaxWidth
                 ) {
                     if (isLandscape) {
                         // Landscape: left(title+switches) | divider | right(buttons)
                         Row(
-                            modifier = Modifier.height(IntrinsicSize.Min)
+                            modifier = Modifier
+                                .height(IntrinsicSize.Min)
+                                .padding(vertical = DialogContentVerticalPadding)
                         ) {
                             // Left: title + switches
                             Column(
@@ -237,20 +240,23 @@ class RecordingShortcutActivity : ComponentActivity() {
                                     text = stringResource(R.string.dialog_record_title),
                                     style = MiuixTheme.textStyles.title4,
                                     color = MiuixTheme.colorScheme.onBackground,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(horizontal = DialogContentHorizontalPadding)
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = stringResource(R.string.dialog_record_summary),
                                     style = MiuixTheme.textStyles.body1,
-                                    color = MiuixTheme.colorScheme.onSurfaceSecondary
+                                    color = MiuixTheme.colorScheme.onSurfaceSecondary,
+                                    modifier = Modifier.padding(horizontal = DialogContentHorizontalPadding)
                                 )
                                 permissionWarning?.let {
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
                                         text = stringResource(it),
                                         style = MiuixTheme.textStyles.body1,
-                                        color = MiuixTheme.colorScheme.onSurfaceSecondary
+                                        color = MiuixTheme.colorScheme.onSurfaceSecondary,
+                                        modifier = Modifier.padding(horizontal = DialogContentHorizontalPadding)
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(12.dp))
@@ -291,7 +297,8 @@ class RecordingShortcutActivity : ComponentActivity() {
                             Column(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .fillMaxHeight(),
+                                    .fillMaxHeight()
+                                    .padding(horizontal = DialogContentHorizontalPadding),
                                 verticalArrangement = Arrangement.spacedBy(
                                     8.dp,
                                     Alignment.CenterVertically
@@ -319,18 +326,30 @@ class RecordingShortcutActivity : ComponentActivity() {
                         }
                     } else {
                         // Portrait: original layout
-                        Column {
+                        Column(
+                            modifier = Modifier.padding(vertical = DialogContentVerticalPadding)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.dialog_record_title),
+                                style = MiuixTheme.textStyles.title4,
+                                color = MiuixTheme.colorScheme.onBackground,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = DialogContentHorizontalPadding)
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
                             Text(
                                 text = stringResource(R.string.dialog_record_summary),
                                 style = MiuixTheme.textStyles.body1,
-                                color = MiuixTheme.colorScheme.onSurfaceSecondary
+                                color = MiuixTheme.colorScheme.onSurfaceSecondary,
+                                modifier = Modifier.padding(horizontal = DialogContentHorizontalPadding)
                             )
                             permissionWarning?.let {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = stringResource(it),
                                     style = MiuixTheme.textStyles.body1,
-                                    color = MiuixTheme.colorScheme.onSurfaceSecondary
+                                    color = MiuixTheme.colorScheme.onSurfaceSecondary,
+                                    modifier = Modifier.padding(horizontal = DialogContentHorizontalPadding)
                                 )
                             }
                             Spacer(modifier = Modifier.height(12.dp))
@@ -356,7 +375,11 @@ class RecordingShortcutActivity : ComponentActivity() {
                                 }
                             )
                             Spacer(modifier = Modifier.height(16.dp))
-                            Row(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = DialogContentHorizontalPadding)
+                            ) {
                                 TextButton(
                                     text = stringResource(R.string.cancel),
                                     onClick = {
@@ -403,6 +426,8 @@ class RecordingShortcutActivity : ComponentActivity() {
 
     private companion object {
         private const val ROOT_SESSION_OWNER_KEY = "root_session_owner"
+        val DialogContentHorizontalPadding = 24.dp
+        val DialogContentVerticalPadding = 24.dp
     }
 }
 
@@ -422,7 +447,6 @@ private fun ShowTouchesSwitch(
         title = stringResource(R.string.show_touches),
         summary = if (!enabled) stringResource(R.string.permission_privilege) else null,
         checked = settings.showTouches,
-        insideMargin = PaddingValues(0.dp),
         enabled = enabled,
         onCheckedChange = onCheckedChange
     )
@@ -441,7 +465,6 @@ private fun RecordingAudioSourceSpinner(
             DropdownItem(text = stringResource(it.labelResId))
         },
         selectedIndex = AudioSource.entries.indexOf(settings.audioSource),
-        insideMargin = PaddingValues(0.dp),
         enabled = enabled,
         onSelectedIndexChange = { onSelected(AudioSource.entries[it]) }
     )

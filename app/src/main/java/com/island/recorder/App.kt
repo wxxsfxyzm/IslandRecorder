@@ -16,7 +16,7 @@ class App : Application() {
 
         HiddenApiBypass.addHiddenApiExemptions("")
 
-        Timber.plant(Timber.DebugTree())
+        if (BuildConfig.DEBUG) Timber.plant(Timber.DebugTree())
 
         startKoin {
             // Koin Android Logger
