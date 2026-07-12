@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -49,7 +50,7 @@ class RecordingSavedNotificationManager(
             .setContentTitle(context.getString(R.string.recording_saved_title))
             .setContentText(message)
             .setSubText(output.displayName)
-            .setContentIntent(openPendingIntent(output.uri))
+            .setContentIntent(openPendingIntent(output))
             .setAutoCancel(true)
             .setOnlyAlertOnce(true)
             .setWhen(System.currentTimeMillis())
@@ -103,12 +104,15 @@ class RecordingSavedNotificationManager(
         notificationManager.createNotificationChannel(channel)
     }
 
-    private fun openPendingIntent(uri: Uri): PendingIntent {
+    private fun openPendingIntent(output: RecordingOutput): PendingIntent {
         val intent = Intent(ACTION_REVIEW).apply {
             setPackage(PACKAGE_MIUI_GALLERY)
-            setDataAndType(uri, MIME_TYPE_MP4)
+            setDataAndType(output.uri, MIME_TYPE_MP4)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            if (output.isDocumentUri) {
+                clipData = ClipData.newUri(context.contentResolver, output.displayName, output.uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
         }
         return PendingIntent.getActivity(
             context,
@@ -229,7 +233,7 @@ class RecordingSavedNotificationManager(
         private const val ACTION_REVIEW = "com.android.camera.action.REVIEW"
         private const val PACKAGE_MIUI_GALLERY = "com.miui.gallery"
         private const val MIME_TYPE_MP4 = "video/mp4"
-        private const val OPEN_REQUEST_CODE = 10
+        private const val OPEN_REQUEST_CODE = 13
         private const val SHARE_REQUEST_OFFSET = 10_000
         private const val DELETE_REQUEST_OFFSET = 20_000
         private const val NOTIFICATION_COVER_MAX_SIZE_PX = 1024

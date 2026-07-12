@@ -889,6 +889,11 @@ class RecorderService : Service() {
                     Timber.e(e, "Error closing recording output")
                 }
                 if (currentRecordingOutput != null) {
+                    try {
+                        recordingStorageProvider.finalize(currentRecordingOutput)
+                    } catch (e: Exception) {
+                        Timber.e(e, "Error finalizing recording output")
+                    }
                     recordingSavedNotificationManager.showRecordingSavedNotification(
                         currentRecordingOutput
                     )

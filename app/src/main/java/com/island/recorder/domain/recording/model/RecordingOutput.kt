@@ -7,5 +7,6 @@ data class RecordingOutput(
     val uri: Uri,
     val displayName: String,
     val fileDescriptor: ParcelFileDescriptor,
-    val isDocumentUri: Boolean
+    val isDocumentUri: Boolean,
+    val filePath: String? = null
 )

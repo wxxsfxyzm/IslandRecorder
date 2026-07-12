@@ -1,8 +1,9 @@
 package com.island.recorder.framework.storage
 
-import android.content.ContentValues
 import android.content.ContentResolver
+import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.MediaStore
@@ -28,6 +29,9 @@ class SafRecordingStorageProviderImpl(
         private const val FILE_PREFIX = "Screenrecorder-"
         private const val FILE_EXTENSION = ".mp4"
         private const val MIME_TYPE_MP4 = "video/mp4"
+        private const val PACKAGE_MIUI_GALLERY = "com.miui.gallery"
+        private const val ACTION_MIUI_GALLERY_SAVE_TO_CLOUD = "com.miui.gallery.SAVE_TO_CLOUD"
+        private const val EXTRA_FILE_PATH = "extra_file_path"
     }
 
     override suspend fun createRecordingOutput(): RecordingOutput = withContext(Dispatchers.IO) {
@@ -39,7 +43,10 @@ class SafRecordingStorageProviderImpl(
         }
 
         val storageUri = Uri.parse(storageValue)
-        if (storageUri.scheme == ContentResolver.SCHEME_CONTENT && DocumentsContract.isTreeUri(storageUri)) {
+        if (storageUri.scheme == ContentResolver.SCHEME_CONTENT && DocumentsContract.isTreeUri(
+                storageUri
+            )
+        ) {
             return@withContext createSafOutput(storageUri, displayName)
         }
 
@@ -54,6 +61,18 @@ class SafRecordingStorageProviderImpl(
             } else {
                 context.contentResolver.delete(output.uri, null, null)
             }
+        }
+    }
+
+    override suspend fun finalize(output: RecordingOutput) {
+        withContext(Dispatchers.IO) {
+            if (!output.isDocumentUri) {
+                val values = ContentValues().apply {
+                    put(MediaStore.Video.Media.IS_PENDING, 0)
+                }
+                context.contentResolver.update(output.uri, values, null, null)
+            }
+            output.filePath?.let(::notifyMiuiGalleryRecordingSaved)
         }
     }
 
@@ -90,7 +109,10 @@ class SafRecordingStorageProviderImpl(
         val values = ContentValues().apply {
             put(MediaStore.Video.Media.DISPLAY_NAME, displayName)
             put(MediaStore.Video.Media.MIME_TYPE, MIME_TYPE_MP4)
-            put(MediaStore.Video.Media.RELATIVE_PATH, relativePath.ifBlank { DEFAULT_RELATIVE_PATH })
+            put(
+                MediaStore.Video.Media.RELATIVE_PATH,
+                relativePath.ifBlank { DEFAULT_RELATIVE_PATH })
+            put(MediaStore.Video.Media.IS_PENDING, 1)
         }
         val outputUri = context.contentResolver.insert(
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
@@ -103,8 +125,17 @@ class SafRecordingStorageProviderImpl(
             uri = outputUri,
             displayName = displayName,
             fileDescriptor = descriptor,
-            isDocumentUri = false
+            isDocumentUri = false,
+            filePath = "$DEFAULT_STORAGE_PATH/$displayName"
         )
+    }
+
+    private fun notifyMiuiGalleryRecordingSaved(filePath: String) {
+        val intent = Intent(ACTION_MIUI_GALLERY_SAVE_TO_CLOUD).apply {
+            setPackage(PACKAGE_MIUI_GALLERY)
+            putExtra(EXTRA_FILE_PATH, filePath)
+        }
+        context.sendBroadcast(intent)
     }
 
     private fun recordingFileName(): String {
