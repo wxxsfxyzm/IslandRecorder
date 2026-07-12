@@ -1,7 +1,7 @@
 [versions]
 agp = "9.2.1"
 kotlin = "2.4.0"
-ksp = "2.3.9"
+ksp = "2.3.10"
 composeBom = "2026.06.01"
 compose = "1.11.4"
 splashScreen = "1.2.0"
