@@ -397,22 +397,23 @@ fun SettingsPage(
                     SwitchPreference(
                         title = stringResource(R.string.bypass_screen_share_protection),
                         summary = stringResource(
-                            if (selectedAuthorizerAvailable) {
-                                R.string.bypass_screen_share_protection_summary
-                            } else {
-                                R.string.permission_privilege
+                            when {
+                                !selectedAuthorizerAvailable -> R.string.permission_privilege
+                                uiState.usesPersistentScreenShareProtectionBypass ->
+                                    R.string.bypass_screen_share_protection_os4_summary
+                                else -> R.string.bypass_screen_share_protection_summary
                             }
                         ),
-                        checked = currentSettings.bypassScreenShareProtection,
-                        enabled = selectedAuthorizerAvailable,
-                        onCheckedChange = {
-                            scope.launch {
-                                appSettingsRepo.putBoolean(
-                                    BooleanSetting.BypassScreenShareProtection,
-                                    it
-                                )
-                            }
-                        }
+                        checked = if (uiState.usesPersistentScreenShareProtectionBypass) {
+                            uiState.persistentScreenShareProtectionBypassed == true
+                        } else {
+                            currentSettings.bypassScreenShareProtection
+                        },
+                        enabled = selectedAuthorizerAvailable &&
+                            (!uiState.usesPersistentScreenShareProtectionBypass ||
+                                (uiState.persistentScreenShareProtectionBypassed != null &&
+                                    !uiState.screenShareProtectionUpdating)),
+                        onCheckedChange = viewModel::setScreenShareProtectionBypassed
                     )
                     SwitchPreference(
                         title = stringResource(R.string.bypass_focus_island),

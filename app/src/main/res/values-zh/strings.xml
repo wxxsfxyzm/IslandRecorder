@@ -59,6 +59,7 @@
     <string name="stop_on_lock_screen_summary">屏幕锁定后自动停止当前录制</string>
     <string name="bypass_screen_share_protection">绕过小米屏幕共享保护</string>
     <string name="bypass_screen_share_protection_summary">录制期间临时关闭小米屏幕共享保护，并在录制结束后恢复</string>
+    <string name="bypass_screen_share_protection_os4_summary">关闭小米屏幕共享保护</string>
     <string name="bypass_focus_island">绕过小米超级岛白名单</string>
     <string name="bypass_focus_island_summary">发送通知时临时断开 XMSF 网络以绕过系统白名单限制</string>
     <string name="shizuku_status_authorized">已授权</string>

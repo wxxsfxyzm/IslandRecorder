@@ -247,15 +247,17 @@ class RecorderService : Service() {
             }
             logStartupStep("startForeground completed")
 
-            // Initialize MediaProjection (must happen on main thread before API calls)
-            if (!screenCaptureManager.initializeProjection(resultCode, data)) {
-                _recordingState.value =
-                    RecordingState.Error(getString(R.string.error_screen_capture))
-                requestTileRefresh(this)
-                stopSelf()
-                return
+            // Preserve legacy startup order. HyperOS 4 checks its AppOp before starting projection.
+            if (!privilegedOperations.usesPersistentScreenShareProtectionBypass) {
+                if (!screenCaptureManager.initializeProjection(resultCode, data)) {
+                    _recordingState.value =
+                        RecordingState.Error(getString(R.string.error_screen_capture))
+                    requestTileRefresh(this)
+                    stopSelf()
+                    return
+                }
+                logStartupStep("mediaProjection initialized")
             }
-            logStartupStep("mediaProjection initialized")
 
         } catch (e: Exception) {
             Timber.e(e, "Error starting foreground/projection")
@@ -268,6 +270,30 @@ class RecorderService : Service() {
         // Heavy initialization in background
         startJob = serviceScope.launch(Dispatchers.Default) {
             try {
+                if (privilegedOperations.usesPersistentScreenShareProtectionBypass) {
+                    // The OS4 switch is the actual AppOp, independent of the legacy DataStore setting.
+                    val bypassed = withContext(Dispatchers.IO) {
+                        privilegedOperations.readPersistentScreenShareProtectionBypass()
+                    }
+                    Timber.tag(STARTUP_TIMING_TAG).i(
+                        "HyperOS 4 screen share protection before recording: bypassed=$bypassed"
+                    )
+                    if (bypassed == null) {
+                        Timber.w("Unable to check HyperOS 4 screen share protection with selected authorizer")
+                    }
+                    val initialized = withContext(Dispatchers.Main) {
+                        screenCaptureManager.initializeProjection(resultCode, data)
+                    }
+                    if (!initialized) {
+                        _recordingState.value =
+                            RecordingState.Error(getString(R.string.error_screen_capture))
+                        requestTileRefresh(this@RecorderService)
+                        withContext(Dispatchers.Main) { stopSelf() }
+                        return@launch
+                    }
+                    logStartupStep("mediaProjection initialized")
+                }
+
                 // Root/Shizuku privileged calls may initialize app_process/binder wrappers; keep them off main.
                 if (settings.showTouches) {
                     val touchVisualizationEnabled = withContext(Dispatchers.IO) {
@@ -280,7 +306,10 @@ class RecorderService : Service() {
                     }
                 }
 
-                if (settings.bypassScreenShareProtection) {
+                if (privilegedOperations.usesPersistentScreenShareProtectionBypass) {
+                    // OS4 keeps the per-app AppOp selected by the user; never changes global settings.
+                    logStartupStep("HyperOS 4 persistent screen share protection state retained")
+                } else if (settings.bypassScreenShareProtection) {
                     val screenShareProtectionEnabled = withContext(Dispatchers.IO) {
                         privilegedOperations.isScreenShareProtectionEnabled()
                     }

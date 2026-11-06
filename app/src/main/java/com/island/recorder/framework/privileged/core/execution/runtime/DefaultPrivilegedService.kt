@@ -28,6 +28,7 @@ class DefaultPrivilegedService private constructor(
         private const val MODE_ALLOWED = 0
         private const val MODE_IGNORED = 1
         private const val OP_PROJECT_MEDIA = 46
+        private const val OP_MIUI_MEDIA_PROJECTION = 10042
         private const val OPSTR_PROJECT_MEDIA = "android:project_media"
         private const val SETTING_SHOW_TOUCHES = "show_touches"
         private const val SETTING_SCREEN_SHARE_PROTECTION = "screen_share_protection"
@@ -294,6 +295,28 @@ class DefaultPrivilegedService private constructor(
             parameterTypes = arrayOf(IBinder::class.java),
             binder
         ) ?: throw IllegalStateException("Failed to create hooked Settings provider")
+    }
+
+    override fun getMiuiMediaProjectionMode(packageName: String, uid: Int): Int? = try {
+        appOpsService?.checkOperation(OP_MIUI_MEDIA_PROJECTION, uid, packageName)
+    } catch (e: Exception) {
+        Timber.tag(TAG).e(e, "Failed to read MIUI MEDIA_PROJECTION via ${runtime.name}")
+        null
+    }
+
+    override fun setMiuiMediaProjectionMode(packageName: String, uid: Int, mode: Int): Boolean {
+        val service = appOpsService ?: return false
+        return try {
+            service.setMode(OP_MIUI_MEDIA_PROJECTION, uid, packageName, mode)
+            val actualMode = service.checkOperation(OP_MIUI_MEDIA_PROJECTION, uid, packageName)
+            Timber.tag(TAG).i(
+                "Set MIUI MEDIA_PROJECTION via ${runtime.name}: expected=$mode actual=$actualMode"
+            )
+            actualMode == mode
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Failed to set MIUI MEDIA_PROJECTION via ${runtime.name}")
+            false
+        }
     }
 
     override fun setProjectMediaAllowed(packageName: String, uid: Int, allowed: Boolean): Boolean {

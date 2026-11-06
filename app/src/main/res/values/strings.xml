@@ -59,6 +59,7 @@
     <string name="stop_on_lock_screen_summary">Automatically stop recording when the screen locks</string>
     <string name="bypass_screen_share_protection">Bypass Xiaomi Screen Share Protection</string>
     <string name="bypass_screen_share_protection_summary">Temporarily disable Xiaomi screen share protection while recording and restore it afterward</string>
+    <string name="bypass_screen_share_protection_os4_summary">Disable Xiaomi screen share protection</string>
     <string name="bypass_focus_island">Bypass Xiaomi Focus Island Whitelist</string>
     <string name="bypass_focus_island_summary">Temporarily disconnect XMSF network when sending notifications to bypass the system whitelist</string>
     <string name="shizuku_status_authorized">Authorized</string>

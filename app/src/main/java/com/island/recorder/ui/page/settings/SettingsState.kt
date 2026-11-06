@@ -12,5 +12,8 @@ data class SettingsState(
     val selectedAuthorizer: Authorizer = Authorizer.Shizuku,
     val hideLauncherIcon: Boolean = false,
     val capability: DeviceCapability = DeviceCapability(RootMode.None, ShizukuMode.NotRunning),
-    val isProjectMediaGranted: Boolean = false
+    val isProjectMediaGranted: Boolean = false,
+    val usesPersistentScreenShareProtectionBypass: Boolean = false,
+    val persistentScreenShareProtectionBypassed: Boolean? = null,
+    val screenShareProtectionUpdating: Boolean = false
 )

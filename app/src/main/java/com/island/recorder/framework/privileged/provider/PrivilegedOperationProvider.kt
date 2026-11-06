@@ -2,6 +2,7 @@ package com.island.recorder.framework.privileged.provider
 
 import android.app.AppOpsManager
 import android.content.Context
+import android.os.SystemProperties
 import com.island.recorder.domain.settings.repository.AppSettingsRepository
 import com.island.recorder.framework.privileged.Authorizer
 import com.island.recorder.framework.privileged.DeviceCapability
@@ -26,6 +27,43 @@ class PrivilegedOperationProvider(
     private companion object {
         private const val TAG = "PrivilegedOperation"
         private const val OPSTR_PROJECT_MEDIA = "android:project_media"
+    }
+
+    // HyperOS 4 has a separate per-app sharing monitor. Keep older systems on the legacy path.
+    val usesPersistentScreenShareProtectionBypass: Boolean = try {
+        SystemProperties.getInt("ro.mi.os.version.code", 0) == 4
+    } catch (e: Exception) {
+        Timber.tag(TAG).e(e, "Failed to read HyperOS version")
+        false
+    }
+
+    fun readPersistentScreenShareProtectionBypass(): Boolean? {
+        if (!usesPersistentScreenShareProtectionBypass) return null
+        val authorizer = selectedAvailableAuthorizer() ?: return null
+        val mode = runDirectPrivilegedOrNull(authorizer) {
+            it.getMiuiMediaProjectionMode(context.packageName, context.applicationInfo.uid)
+        } ?: return null
+        return mode == AppOpsManager.MODE_IGNORED
+    }
+
+    fun setPersistentScreenShareProtectionBypass(bypassed: Boolean): Boolean {
+        if (!usesPersistentScreenShareProtectionBypass) return false
+        val authorizer = selectedAvailableAuthorizer() ?: return false
+        return runDirectPrivilegedOrNull(authorizer) {
+            it.setMiuiMediaProjectionMode(
+                context.packageName,
+                context.applicationInfo.uid,
+                if (bypassed) AppOpsManager.MODE_IGNORED else AppOpsManager.MODE_ALLOWED
+            )
+        } ?: false
+    }
+
+    private fun selectedAvailableAuthorizer(): Authorizer? {
+        val capability = capabilityProvider.current()
+        return when (val selected = settingsRepository.currentPreferences.authorizer) {
+            Authorizer.Shizuku -> selected.takeIf { capability.shizukuMode == ShizukuMode.Authorized }
+            Authorizer.Root -> selected.takeIf { capability.rootMode != RootMode.None }
+        }
     }
 
     private val _projectMediaAllowedFlow = MutableStateFlow(false)
