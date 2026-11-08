@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +60,7 @@ import com.island.recorder.framework.privileged.RootMode
 import com.island.recorder.framework.privileged.ShizukuMode
 import com.island.recorder.framework.storage.SafRecordingStorageProviderImpl
 import com.island.recorder.ui.theme.getMiuixAppBarColor
+import com.island.recorder.ui.theme.IslandTheme
 import com.island.recorder.ui.theme.recorderMiuixBlurEffect
 import com.island.recorder.ui.theme.rememberMiuixBlurBackdrop
 import kotlinx.coroutines.launch
@@ -73,14 +76,18 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
+import top.yukonga.miuix.kmp.glass.GlassDefaults
+import top.yukonga.miuix.kmp.glass.GlassTopAppBar
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
-import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
 @Composable
 fun SettingsPage(
+    modifier: Modifier = Modifier,
+    useGlass: Boolean = false,
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
@@ -145,23 +152,40 @@ fun SettingsPage(
     }
 
     val scrollBehavior = MiuixScrollBehavior()
+    val listState = rememberLazyListState()
+    val contentUnderTopBar by remember(listState) {
+        derivedStateOf { listState.canScrollBackward }
+    }
+    val glassEnabled = useGlass && isRuntimeShaderSupported()
     val layoutDirection = LocalLayoutDirection.current
     val horizontalSafeInsets =
         WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
     val backdrop = rememberMiuixBlurBackdrop(true)
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier,
         topBar = {
-            TopAppBar(
-                modifier = Modifier.recorderMiuixBlurEffect(backdrop),
-                color = backdrop.getMiuixAppBarColor(),
-                title = stringResource(R.string.settings),
-                scrollBehavior = scrollBehavior
-            )
+            if (glassEnabled) {
+                GlassTopAppBar(
+                    title = stringResource(R.string.settings),
+                    isContentScrolled = contentUnderTopBar,
+                    progressiveBlur = true,
+                    backdrop = backdrop,
+                    scrollBehavior = scrollBehavior,
+                    style = GlassDefaults.style(IslandTheme.isDark)
+                )
+            } else {
+                TopAppBar(
+                    modifier = Modifier.recorderMiuixBlurEffect(backdrop),
+                    color = backdrop.getMiuixAppBarColor(),
+                    title = stringResource(R.string.settings),
+                    scrollBehavior = scrollBehavior
+                )
+            }
         }
     ) { paddingValues ->
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .then(backdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier)
@@ -183,7 +207,9 @@ fun SettingsPage(
                         .padding(horizontal = 12.dp)
                         .padding(bottom = 12.dp)
                 ) {
-                    WindowSpinnerPreference(
+                    SettingsDropdownPreference(
+                        useGlass = glassEnabled,
+                        backdrop = backdrop,
                         title = stringResource(R.string.authorization_method),
                         summary = stringResource(
                             if (selectedAuthorizer == Authorizer.Shizuku) R.string.authorization_method_shizuku else R.string.authorization_method_root
@@ -260,7 +286,9 @@ fun SettingsPage(
                             )
                         )
                     }
-                    WindowSpinnerPreference(
+                    SettingsDropdownPreference(
+                        useGlass = glassEnabled,
+                        backdrop = backdrop,
                         title = stringResource(R.string.video_quality),
                         summary = stringResource(R.string.video_quality_summary),
                         items = qualityItems,
@@ -274,7 +302,9 @@ fun SettingsPage(
                             }
                         }
                     )
-                    WindowSpinnerPreference(
+                    SettingsDropdownPreference(
+                        useGlass = glassEnabled,
+                        backdrop = backdrop,
                         title = stringResource(R.string.video_bitrate),
                         summary = stringResource(R.string.video_bitrate_summary),
                         items = VideoBitrate.entries.map { DropdownItem(text = stringResource(it.labelResId)) },
@@ -288,7 +318,9 @@ fun SettingsPage(
                             }
                         }
                     )
-                    WindowSpinnerPreference(
+                    SettingsDropdownPreference(
+                        useGlass = glassEnabled,
+                        backdrop = backdrop,
                         title = stringResource(R.string.screen_orientation),
                         summary = stringResource(R.string.screen_orientation_summary),
                         items = ScreenOrientation.entries.map {
@@ -308,7 +340,9 @@ fun SettingsPage(
                             }
                         }
                     )
-                    WindowSpinnerPreference(
+                    SettingsDropdownPreference(
+                        useGlass = glassEnabled,
+                        backdrop = backdrop,
                         title = stringResource(R.string.audio_source),
                         summary = stringResource(
                             if (hasRecordAudioPermission) {
@@ -329,7 +363,9 @@ fun SettingsPage(
                             }
                         }
                     )
-                    WindowSpinnerPreference(
+                    SettingsDropdownPreference(
+                        useGlass = glassEnabled,
+                        backdrop = backdrop,
                         title = stringResource(R.string.frame_rate),
                         summary = stringResource(R.string.frame_rate_summary),
                         items = FrameRate.entries.map { DropdownItem(text = stringResource(it.labelResId)) },
@@ -343,7 +379,9 @@ fun SettingsPage(
                             }
                         }
                     )
-                    WindowSpinnerPreference(
+                    SettingsDropdownPreference(
+                        useGlass = glassEnabled,
+                        backdrop = backdrop,
                         title = stringResource(R.string.video_codec),
                         summary = stringResource(R.string.video_codec_summary),
                         items = VideoCodec.entries.map { DropdownItem(text = stringResource(it.labelResId)) },
@@ -441,7 +479,9 @@ fun SettingsPage(
                             }
                         }
                     )
-                    WindowSpinnerPreference(
+                    SettingsDropdownPreference(
+                        useGlass = glassEnabled,
+                        backdrop = backdrop,
                         title = stringResource(R.string.tile_style),
                         summary = stringResource(R.string.tile_style_summary),
                         items = TileStyle.entries.map { style ->

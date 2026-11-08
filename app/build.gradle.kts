@@ -139,6 +139,7 @@ dependencies {
     implementation(libs.miuix.blur)
     implementation(libs.miuix.preference)
     implementation(libs.miuix.icons)
+    implementation(libs.miuix.glass)
 
     // Koin Dependency Injection
     implementation(platform(libs.koin.bom))
